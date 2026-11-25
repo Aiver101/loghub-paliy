@@ -21,7 +21,8 @@ var service = new LogService(
     new ILogWriter[] 
     { 
         new ConsoleLogWriter(), 
-        new FileLogWriter(outputFileNew, 1024 * 1024 * 5) 
+        new FileLogWriter(outputFileNew, 1024 * 1024 * 5),
+        new TelegramLogWriter("fake_token", "123456") // <-- ДОБАВЛЯЕМ НОВЫЙ ПРИЁМНИК
     }
 );
 service.Process(sourceFile);
