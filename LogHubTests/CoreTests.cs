@@ -1,3 +1,4 @@
+using LogHub;
 using LogHub.Core;
 
 namespace LogHubTests;
@@ -89,6 +90,24 @@ public class CoreTests
 
         Assert.Single(writer.WrittenLines);
         Assert.Contains("INFO", writer.WrittenLines[0]);
+    }
+
+        // 8. Тест Синглтона: проверяем, что это один и тот же объект
+    [Fact]
+    public void Singleton_ReturnsSameInstance()
+    {
+        var instance1 = LogHubSettings.Instance;
+        var instance2 = LogHubSettings.Instance;
+        
+        Assert.Same(instance1, instance2);
+    }
+
+    // 9. Тест Синглтона: проверяем, что настройки можно изменить
+    [Fact]
+    public void Singleton_SettingsCanBeChanged()
+    {
+        LogHubSettings.Instance.SourcePath = "test.txt";
+        Assert.Equal("test.txt", LogHubSettings.Instance.SourcePath);
     }
 }
 

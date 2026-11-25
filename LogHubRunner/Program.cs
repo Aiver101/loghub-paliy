@@ -1,31 +1,49 @@
-﻿using LogHub.AntiPatterns;
-using LogHub.Core;
+﻿using LogHub.Core;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-var sourceFile = "logs.txt";
-var outputFileOld = "output_old.txt";
-var outputFileNew = "output_new.txt";
+// 1. Загружаем конфигурацию из appsettings.json
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false)
+    .Build();
 
-if (File.Exists(outputFileOld)) File.Delete(outputFileOld);
-if (File.Exists(outputFileNew)) File.Delete(outputFileNew);
+// 2. Заполняем наш Синглтон настройками
+var settings = LogHubSettings.Instance;
+configuration.GetSection("LogHub").Bind(settings);
 
-// 1. Запуск старого god-класса
-var godClass = new LogProcessingModule();
-godClass.Process(sourceFile, outputFileOld, 1024 * 1024 * 5); // 5 MB
+// 3. Настраиваем DI-контейнер (IoC)
+var services = new ServiceCollection();
 
-// 2. Запуск нового рефакторинга
-var service = new LogService(
-    new FileLogReader(),
-    new PlainTextLogParser(),
-    new DebugLogFilter(),
-    new PlainTextLogFormatter(),
-    new ILogWriter[] 
-    { 
-        new ConsoleLogWriter(), 
-        new FileLogWriter(outputFileNew, 1024 * 1024 * 5),
-        new TelegramLogWriter("fake_token", "123456") // <-- ДОБАВЛЯЕМ НОВЫЙ ПРИЁМНИК
-    }
-);
-service.Process(sourceFile);
+// Регистрируем слои
+services.AddTransient<ILogReader, FileLogReader>();
+services.AddTransient<ILogParser, PlainTextLogParser>();
+services.AddTransient<ILogFilter, DebugLogFilter>();
+services.AddTransient<ILogFormatter, PlainTextLogFormatter>();
 
-Console.WriteLine($"\nСтарый файл: {outputFileOld}");
-Console.WriteLine($"Новый файл: {outputFileNew}");
+// Регистрируем приёмники (Writers) на основе конфигурации
+if (settings.UseConsole)
+{
+    services.AddTransient<ILogWriter, ConsoleLogWriter>();
+}
+if (settings.UseFile)
+{
+    // Для FileLogWriter нужно передать параметры из настроек
+    services.AddTransient<ILogWriter>(sp => new FileLogWriter(settings.OutputFile, settings.MaxFileSize));
+}
+if (settings.UseTelegram)
+{
+    services.AddTransient<ILogWriter>(sp => new TelegramLogWriter("fake_token", "123456"));
+}
+
+// Регистрируем сам сервис
+services.AddTransient<LogService>();
+
+// 4. Собираем провайдер и получаем сервис
+var serviceProvider = services.BuildServiceProvider();
+var logService = serviceProvider.GetRequiredService<LogService>();
+
+// 5. Запускаем обработку
+Console.WriteLine("--- Запуск LogHub через DI ---");
+logService.Process(settings.SourcePath);
+Console.WriteLine("--- Завершено ---");
