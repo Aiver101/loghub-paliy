@@ -18,3 +18,5 @@ artifacts/
 *.nupkg
 **/packages/*
 !**/packages/build/
+output_*.txt
+*.bak

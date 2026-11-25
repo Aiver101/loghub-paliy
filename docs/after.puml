@@ -1,0 +1,49 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface ILogReader {
+  + ReadLines(sourcePath: string): IEnumerable<string>
+}
+class FileLogReader implements ILogReader
+
+interface ILogParser {
+  + Parse(line: string): LogEntry
+}
+class PlainTextLogParser implements ILogParser
+
+class LogEntry {
+  + Date: string
+  + Level: string
+  + Message: string
+}
+
+interface ILogFilter {
+  + IsValid(entry: LogEntry): bool
+}
+class DebugLogFilter implements ILogFilter
+
+interface ILogFormatter {
+  + Format(entry: LogEntry): string
+}
+class PlainTextLogFormatter implements ILogFormatter
+
+interface ILogWriter {
+  + Write(formattedLine: string): void
+}
+class ConsoleLogWriter implements ILogWriter
+class FileLogWriter implements ILogWriter
+class TelegramLogWriter implements ILogWriter
+
+class LogService {
+  + LogService(reader, parser, filter, formatter, writers)
+  + Process(sourcePath: string): void
+}
+
+LogService --> ILogReader
+LogService --> ILogParser
+LogService --> ILogFilter
+LogService --> ILogFormatter
+LogService --> ILogWriter : uses many
+LogService ..> LogEntry : creates/uses
+
+@enduml

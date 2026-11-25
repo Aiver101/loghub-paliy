@@ -1,3 +1,4 @@
+using LogHub;
 using LogHub.Core;
 
 namespace LogHubTests;

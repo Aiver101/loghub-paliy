@@ -1,0 +1,20 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class LogProcessingModule {
+  + Process(inputFile: string, outputFile: string, maxFileSize: int)
+  - ReadLines()
+  - ParseLine()
+  - FilterDebug()
+  - Format()
+  - WriteToConsole()
+  - WriteToFileWithRotation()
+}
+
+note right of LogProcessingModule
+  God-класс. 
+  Нарушает SRP (делает всё сразу), 
+  OCP (switch по приёмникам), 
+  DIP (жестко завязан на File и Console).
+end note
+@enduml
