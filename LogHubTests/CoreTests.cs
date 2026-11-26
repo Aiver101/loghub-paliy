@@ -1,3 +1,4 @@
+using LogHub;
 using LogHub.Core;
 
 namespace LogHubTests;
@@ -13,7 +14,7 @@ public class CoreTests
         
         Assert.NotNull(result);
         Assert.Equal("[2026-11-25", result.Date);
-        Assert.Equal("10:00:00]", result.Level); // Обрати внимание, как split делит по пробелам!
+        Assert.Equal("10:00:00]", result.Level);
         Assert.Equal("INFO Привет", result.Message);
     }
 
@@ -77,7 +78,6 @@ public class CoreTests
     [Fact]
     public void LogService_ProcessesAndWrites_ToInMemoryWriter()
     {
-        // Создаем фейковые реализации, чтобы не трогать диск
         var reader = new FakeReader(new[] { "[2026-11-25 10:00:00] INFO Тест" });
         var parser = new PlainTextLogParser();
         var filter = new DebugLogFilter();
@@ -89,6 +89,62 @@ public class CoreTests
 
         Assert.Single(writer.WrittenLines);
         Assert.Contains("INFO", writer.WrittenLines[0]);
+    }
+    
+    // 8. Тест Синглтона (ЛР5)
+    [Fact]
+    public void Singleton_ReturnsSameInstance()
+    {
+        var instance1 = LogHubSettings.Instance;
+        var instance2 = LogHubSettings.Instance;
+        
+        Assert.Same(instance1, instance2);
+    }
+
+    // 9. Тест Синглтона (ЛР5)
+    [Fact]
+    public void Singleton_SettingsCanBeChanged()
+    {
+        LogHubSettings.Instance.SourcePath = "test.txt";
+        Assert.Equal("test.txt", LogHubSettings.Instance.SourcePath);
+    }
+    
+    // 10. Тест JSON-парсера: валидная строка (ЛР6)
+    [Fact]
+    public void JsonParser_ValidLine_ReturnsEntry()
+    {
+        var parser = new JsonLogParser();
+        var result = parser.Parse("{\"date\":\"2026-11-25\",\"level\":\"INFO\",\"message\":\"Тест\"}");
+        
+        Assert.NotNull(result);
+        Assert.Equal("2026-11-25", result.Date);
+        Assert.Equal("INFO", result.Level);
+        Assert.Equal("Тест", result.Message);
+    }
+
+    // 11. Тест JSON-парсера: плохая строка (ЛР6)
+    [Fact]
+    public void JsonParser_InvalidLine_ReturnsNull()
+    {
+        var parser = new JsonLogParser();
+        var result = parser.Parse("это не json");
+        Assert.Null(result);
+    }
+
+    // 12. Тест Итератора: обход коллекции (ЛР6)
+    [Fact]
+    public void Iterator_IteratesThroughCollection()
+    {
+        var collection = new LogCollection();
+        collection.Add(new LogEntry { Message = "1" });
+        collection.Add(new LogEntry { Message = "2" });
+
+        var count = 0;
+        foreach (var entry in collection)
+        {
+            count++;
+        }
+        Assert.Equal(2, count);
     }
 }
 

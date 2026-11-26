@@ -1,0 +1,39 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+abstract class LogImporterBase {
+  # Parser: ILogParser
+  # Filter: ILogFilter
+  # Formatter: ILogFormatter
+  # Writers: IEnumerable<ILogWriter>
+  + Import(sourcePath: string)
+  # {abstract} ReadLines(sourcePath: string): IEnumerable<string>
+  # {abstract} ParseLine(line: string): LogEntry?
+}
+
+class PlainTextLogImporter extends LogImporterBase
+class JsonLogImporter extends LogImporterBase
+
+interface ILogParser {
+  + Parse(line: string): LogEntry?
+}
+class PlainTextLogParser implements ILogParser
+class JsonLogParser implements ILogParser
+
+class LogCollection {
+  - _entries: List<LogEntry>
+  + Add(entry: LogEntry)
+  + GetEnumerator(): IEnumerator<LogEntry>
+}
+
+class LogIterator {
+  - _entries: IReadOnlyList<LogEntry>
+  - _position: int
+  + MoveNext(): bool
+  + Current: LogEntry
+  + Reset()
+}
+
+LogImporterBase --> ILogParser
+LogCollection --> LogIterator : creates
+@enduml
